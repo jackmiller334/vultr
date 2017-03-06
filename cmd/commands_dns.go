@@ -10,15 +10,15 @@ import (
 
 func dnsDomainList(cmd *cli.Cmd) {
 	cmd.Action = func() {
-		dnsdomains, err := GetClient().GetDnsDomains()
+		dnsdomains, err := GetClient().GetDNSDomains()
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		lengths := []int{40, 24}
-		tabsPrint(Columns{"DOMAIN", "DATE"}, lengths)
+		tabsPrint(columns{"DOMAIN", "DATE"}, lengths)
 		for _, dnsdomain := range dnsdomains {
-			tabsPrint(Columns{dnsdomain.Domain, dnsdomain.Created}, lengths)
+			tabsPrint(columns{dnsdomain.Domain, dnsdomain.Created}, lengths)
 		}
 		tabsFlush()
 	}
@@ -27,10 +27,10 @@ func dnsDomainList(cmd *cli.Cmd) {
 func dnsDomainCreate(cmd *cli.Cmd) {
 	cmd.Spec = "-d -s"
 	domain := cmd.StringOpt("d domain", "", "DNS domain name")
-	serverip := cmd.StringOpt("s serverip", "", "DNS domain ip")
+	serverIP := cmd.StringOpt("s serverIP", "", "DNS domain ip")
 
 	cmd.Action = func() {
-		err := GetClient().CreateDnsDomain(*domain, *serverip)
+		err := GetClient().CreateDNSDomain(*domain, *serverIP)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -42,7 +42,7 @@ func dnsDomainDelete(cmd *cli.Cmd) {
 	cmd.Spec = "-d"
 	domain := cmd.StringOpt("d domain", "", "DNS domain name")
 	cmd.Action = func() {
-		if err := GetClient().DeleteDnsDomain(*domain); err != nil {
+		if err := GetClient().DeleteDNSDomain(*domain); err != nil {
 			log.Fatal(err)
 		}
 		fmt.Println("DNS domain deleted")
@@ -54,15 +54,15 @@ func dnsRecordList(cmd *cli.Cmd) {
 	domain := cmd.StringOpt("d domain", "", "DNS domain name")
 
 	cmd.Action = func() {
-		dnsrecords, err := GetClient().GetDnsRecords(*domain)
+		dnsrecords, err := GetClient().GetDNSRecords(*domain)
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		lengths := []int{10, 10, 15, 50, 10}
-		tabsPrint(Columns{"RECORDID", "TYPE", "NAME", "DATA", "PRIORITY"}, lengths)
+		tabsPrint(columns{"RECORDID", "TYPE", "NAME", "DATA", "PRIORITY"}, lengths)
 		for _, dnsrecord := range dnsrecords {
-			tabsPrint(Columns{dnsrecord.RecordID, dnsrecord.Type, dnsrecord.Name, dnsrecord.Data, dnsrecord.Priority}, lengths)
+			tabsPrint(columns{dnsrecord.RecordID, dnsrecord.Type, dnsrecord.Name, dnsrecord.Data, dnsrecord.Priority}, lengths)
 		}
 		tabsFlush()
 	}
@@ -81,7 +81,7 @@ func dnsRecordCreate(cmd *cli.Cmd) {
 	ttl := cmd.IntOpt("ttl", 300, "DNS record TTL")
 
 	cmd.Action = func() {
-		err := GetClient().CreateDnsRecord(*domain, *name, *rtype, *data, *priority, *ttl)
+		err := GetClient().CreateDNSRecord(*domain, *name, *rtype, *data, *priority, *ttl)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -102,14 +102,14 @@ func dnsRecordUpdate(cmd *cli.Cmd) {
 	ttl := cmd.IntOpt("ttl", 300, "DNS record TTL")
 
 	cmd.Action = func() {
-		dnsrecord := vultr.DnsRecord{
+		dnsrecord := vultr.DNSRecord{
 			RecordID: *record,
 			Name:     *name,
 			Data:     *data,
 			Priority: *priority,
 			TTL:      *ttl,
 		}
-		err := GetClient().UpdateDnsRecord(*domain, dnsrecord)
+		err := GetClient().UpdateDNSRecord(*domain, dnsrecord)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -124,7 +124,7 @@ func dnsRecordDelete(cmd *cli.Cmd) {
 	record := cmd.IntOpt("r record", 0, "RECORDID of a DNS record to delete")
 
 	cmd.Action = func() {
-		if err := GetClient().DeleteDnsRecord(*domain, *record); err != nil {
+		if err := GetClient().DeleteDNSRecord(*domain, *record); err != nil {
 			log.Fatal(err)
 		}
 		fmt.Println("DNS record deleted")

@@ -8,15 +8,31 @@ import (
 	"github.com/jawher/mow.cli"
 )
 
+// RegisterCommands registers all CLI commands
 func (c *CLI) RegisterCommands() {
+	// dns
+	c.Command("dns", "modify DNS", func(cmd *cli.Cmd) {
+		cmd.Command("domain", "show and change DNS domains", func(cmd *cli.Cmd) {
+			cmd.Command("create", "create a DNS domain", dnsDomainCreate)
+			cmd.Command("delete", "delete a DNS domain", dnsDomainDelete)
+			cmd.Command("list", "list all DNS domains", dnsDomainList)
+		})
+		cmd.Command("record", "show and change DNS records", func(cmd *cli.Cmd) {
+			cmd.Command("create", "create a DNS record", dnsRecordCreate)
+			cmd.Command("update", "update a DNS record", dnsRecordUpdate)
+			cmd.Command("delete", "delete a DNS record", dnsRecordDelete)
+			cmd.Command("list", "list all DNS records", dnsRecordList)
+		})
+	})
+
 	// info
 	c.Command("info", "display account information", accountInfo)
 
-	// os
-	c.Command("os", "list all available operating systems", osList)
-
 	// iso
 	c.Command("iso", "list all ISOs currently available on account", isoList)
+
+	// os
+	c.Command("os", "list all available operating systems", osList)
 
 	// plans
 	c.Command("plans", "list all active plans", planList)
@@ -71,6 +87,18 @@ func (c *CLI) RegisterCommands() {
 	})
 	c.Command("servers", "list all active or pending virtual machines on current account", serversList)
 
+	// block storage
+	c.Command("storage", "modify block storage", func(cmd *cli.Cmd) {
+		cmd.Command("create", "create new block storage", blockStorageCreate)
+		cmd.Command("resize", "resize existing block storage", blockStorageResize)
+		cmd.Command("label", "rename existing block storage", blockStorageLabel)
+		cmd.Command("attach", "attach block storage to virtual machine", blockStorageAttach)
+		cmd.Command("detach", "detach block storage from virtual machine", blockStorageDetach)
+		cmd.Command("delete", "remove block storage", blockStorageDelete)
+		cmd.Command("list", "list all block storage", blockStorageList)
+	})
+	c.Command("storages", "list all block storage", blockStorageList)
+
 	// snapshots
 	c.Command("snapshot", "modify snapshots", func(cmd *cli.Cmd) {
 		cmd.Command("create", "create a snapshot from an existing virtual machine", snapshotsCreate)
@@ -89,31 +117,27 @@ func (c *CLI) RegisterCommands() {
 	})
 	c.Command("scripts", "list all startup scripts on current account", scriptsList)
 
+	// reserved ips
+	c.Command("reservedip", "modify reserved IPs", func(cmd *cli.Cmd) {
+		cmd.Command("attach", "attach reserved IP to an existing virtual machine", reservedIPAttach)
+		cmd.Command("convert", "convert existing IP on a virtual machine to a reserved IP", reservedIPConvert)
+		cmd.Command("create", "create new reserved IP", reservedIPCreate)
+		cmd.Command("delete", "delete reserved IP from your account", reservedIPDestroy)
+		cmd.Command("detach", "detach reserved IP from an existing virtual machine", reservedIPDetach)
+		cmd.Command("list", "list all active reserved IPs on current account", reservedIPList)
+	})
+	c.Command("reservedips", "list all active reserved IPs on current account", reservedIPList)
+
 	// version
 	c.Command("version", "vultr CLI version", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
 			lengths := []int{24, 48}
-			tabsPrint(Columns{"Client version:", vultr.Version}, lengths)
-			tabsPrint(Columns{"Vultr API endpoint:", vultr.DefaultEndpoint}, lengths)
-			tabsPrint(Columns{"Vultr API version:", vultr.APIVersion}, lengths)
-			tabsPrint(Columns{"OS/Arch (client):", fmt.Sprintf("%v/%v", runtime.GOOS, runtime.GOARCH)}, lengths)
-			tabsPrint(Columns{"Go version:", runtime.Version()}, lengths)
+			tabsPrint(columns{"Client version:", vultr.Version}, lengths)
+			tabsPrint(columns{"Vultr API endpoint:", vultr.DefaultEndpoint}, lengths)
+			tabsPrint(columns{"Vultr API version:", vultr.APIVersion}, lengths)
+			tabsPrint(columns{"OS/Arch (client):", fmt.Sprintf("%v/%v", runtime.GOOS, runtime.GOARCH)}, lengths)
+			tabsPrint(columns{"Go version:", runtime.Version()}, lengths)
 			tabsFlush()
 		}
-	})
-
-	// dns
-	c.Command("dns", "modify DNS", func(cmd *cli.Cmd) {
-		cmd.Command("domain", "show and change DNS domains", func(cmd *cli.Cmd) {
-			cmd.Command("create", "create a DNS domain", dnsDomainCreate)
-			cmd.Command("delete", "delete a DNS domain", dnsDomainDelete)
-			cmd.Command("list", "list all DNS domains", dnsDomainList)
-		})
-		cmd.Command("record", "show and change DNS records", func(cmd *cli.Cmd) {
-			cmd.Command("create", "create a DNS record", dnsRecordCreate)
-			cmd.Command("update", "update a DNS record", dnsRecordUpdate)
-			cmd.Command("delete", "delete a DNS record", dnsRecordDelete)
-			cmd.Command("list", "list all DNS records", dnsRecordList)
-		})
 	})
 }

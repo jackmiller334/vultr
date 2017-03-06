@@ -1,7 +1,7 @@
 # vultr
-[Vultr](https://www.vultr.com) CLI and API client library, written in [Go](https://golang.org)
+[![GoDoc](https://godoc.org/github.com/JamesClonk/vultr/lib?status.png)](https://godoc.org/github.com/JamesClonk/vultr/lib) [![License](https://img.shields.io/github/license/JamesClonk/vultr.svg)](https://en.wikipedia.org/wiki/MIT_License) [![Latest Version](https://img.shields.io/github/release/JamesClonk/vultr.svg)](https://github.com/JamesClonk/vultr/releases) [![Downloads](https://img.shields.io/github/downloads/JamesClonk/vultr/total.svg)](https://github.com/JamesClonk/vultr/releases) [![Build Status](https://travis-ci.org/JamesClonk/vultr.png?branch=master)](https://travis-ci.org/JamesClonk/vultr)
 
-[![GoDoc](https://godoc.org/github.com/JamesClonk/vultr/lib?status.png)](https://godoc.org/github.com/JamesClonk/vultr/lib) [![Build Status](https://travis-ci.org/JamesClonk/vultr.png?branch=master)](https://travis-ci.org/JamesClonk/vultr)
+[Vultr](https://www.vultr.com) CLI and API client library, written in [Go](https://golang.org)
 
 ### Screenshot
 
@@ -21,11 +21,11 @@ $ export VULTR_API_KEY=87dFbC91rJjkL/18zJEQxS
 * Run it
 ```sh
 $ vultr version
-Client version:         v1.10
+Client version:         1.12.0
 Vultr API endpoint:     https://api.vultr.com/
 Vultr API version:      v1
 OS/Arch (client):       linux/amd64
-Go version:             go1.6.3
+Go version:             go1.7.3
 ```
 
 ---
@@ -46,11 +46,11 @@ $ export VULTR_API_KEY=89dFbb91rGjkL/12zJEQxS
 * Run it
 ```sh
 $ vultr version
-Client version:         v1.10
+Client version:         1.12.0
 Vultr API endpoint:     https://api.vultr.com/
 Vultr API version:      v1
 OS/Arch (client):       linux/amd64
-Go version:             go1.6.3
+Go version:             go1.7.3
 ```
 
 ---

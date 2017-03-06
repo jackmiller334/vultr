@@ -180,6 +180,7 @@ func (s *Server) UnmarshalJSON(data []byte) (err error) {
 	return
 }
 
+// GetServers returns a list of current virtual machines on Vultr account
 func (c *Client) GetServers() (servers []Server, err error) {
 	var serverMap map[string]Server
 	if err := c.get(`server/list`, &serverMap); err != nil {
@@ -192,6 +193,7 @@ func (c *Client) GetServers() (servers []Server, err error) {
 	return servers, nil
 }
 
+// GetServersByTag returns a list of all virtual machines matching by tag
 func (c *Client) GetServersByTag(tag string) (servers []Server, err error) {
 	var serverMap map[string]Server
 	if err := c.get(`server/list?tag=`+tag, &serverMap); err != nil {
@@ -204,6 +206,7 @@ func (c *Client) GetServersByTag(tag string) (servers []Server, err error) {
 	return servers, nil
 }
 
+// GetServer returns the virtual machine with the given ID
 func (c *Client) GetServer(id string) (server Server, err error) {
 	if err := c.get(`server/list?SUBID=`+id, &server); err != nil {
 		return Server{}, err
@@ -211,6 +214,7 @@ func (c *Client) GetServer(id string) (server Server, err error) {
 	return server, nil
 }
 
+// CreateServer creates a new virtual machine on Vultr. ServerOptions are optional settings.
 func (c *Client) CreateServer(name string, regionID, planID, osID int, options *ServerOptions) (Server, error) {
 	values := url.Values{
 		"label":     {name},
@@ -288,6 +292,7 @@ func (c *Client) CreateServer(name string, regionID, planID, osID int, options *
 	return server, nil
 }
 
+// RenameServer renames an existing virtual machine
 func (c *Client) RenameServer(id, name string) error {
 	values := url.Values{
 		"SUBID": {id},
@@ -300,6 +305,7 @@ func (c *Client) RenameServer(id, name string) error {
 	return nil
 }
 
+// StartServer starts an existing virtual machine
 func (c *Client) StartServer(id string) error {
 	values := url.Values{
 		"SUBID": {id},
@@ -311,6 +317,7 @@ func (c *Client) StartServer(id string) error {
 	return nil
 }
 
+// HaltServer stops an existing virtual machine
 func (c *Client) HaltServer(id string) error {
 	values := url.Values{
 		"SUBID": {id},
@@ -322,6 +329,7 @@ func (c *Client) HaltServer(id string) error {
 	return nil
 }
 
+// RebootServer reboots an existing virtual machine
 func (c *Client) RebootServer(id string) error {
 	values := url.Values{
 		"SUBID": {id},
@@ -333,6 +341,7 @@ func (c *Client) RebootServer(id string) error {
 	return nil
 }
 
+// ReinstallServer reinstalls the operating system on an existing virtual machine
 func (c *Client) ReinstallServer(id string) error {
 	values := url.Values{
 		"SUBID": {id},
@@ -344,6 +353,7 @@ func (c *Client) ReinstallServer(id string) error {
 	return nil
 }
 
+// ChangeOSofServer changes the virtual machine to a different operating system
 func (c *Client) ChangeOSofServer(id string, osID int) error {
 	values := url.Values{
 		"SUBID": {id},
@@ -356,36 +366,7 @@ func (c *Client) ChangeOSofServer(id string, osID int) error {
 	return nil
 }
 
-func (c *Client) AttachISOtoServer(id string, isoID int) error {
-	values := url.Values{
-		"SUBID": {id},
-		"ISOID": {fmt.Sprintf("%v", isoID)},
-	}
-
-	if err := c.post(`server/iso_attach`, values, nil); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (c *Client) DetachISOfromServer(id string) error {
-	values := url.Values{
-		"SUBID": {id},
-	}
-
-	if err := c.post(`server/iso_detach`, values, nil); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (c *Client) GetISOStatusofServer(id string) (isoStatus ISOStatus, err error) {
-	if err := c.get(`server/iso_status?SUBID=`+id, &isoStatus); err != nil {
-		return ISOStatus{}, err
-	}
-	return isoStatus, nil
-}
-
+// ListOSforServer lists all available operating systems to which an existing virtual machine can be changed
 func (c *Client) ListOSforServer(id string) (os []OS, err error) {
 	var osMap map[string]OS
 	if err := c.get(`server/os_change_list?SUBID=`+id, &osMap); err != nil {
@@ -398,6 +379,40 @@ func (c *Client) ListOSforServer(id string) (os []OS, err error) {
 	return os, nil
 }
 
+// AttachISOtoServer attaches an ISO image to an existing virtual machine and reboots it
+func (c *Client) AttachISOtoServer(id string, isoID int) error {
+	values := url.Values{
+		"SUBID": {id},
+		"ISOID": {fmt.Sprintf("%v", isoID)},
+	}
+
+	if err := c.post(`server/iso_attach`, values, nil); err != nil {
+		return err
+	}
+	return nil
+}
+
+// DetachISOfromServer detaches the currently mounted ISO image from the virtual machine and reboots it
+func (c *Client) DetachISOfromServer(id string) error {
+	values := url.Values{
+		"SUBID": {id},
+	}
+
+	if err := c.post(`server/iso_detach`, values, nil); err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetISOStatusofServer retrieves the current ISO image state of an existing virtual machine
+func (c *Client) GetISOStatusofServer(id string) (isoStatus ISOStatus, err error) {
+	if err := c.get(`server/iso_status?SUBID=`+id, &isoStatus); err != nil {
+		return ISOStatus{}, err
+	}
+	return isoStatus, nil
+}
+
+// DeleteServer deletes an existing virtual machine
 func (c *Client) DeleteServer(id string) error {
 	values := url.Values{
 		"SUBID": {id},
@@ -409,6 +424,7 @@ func (c *Client) DeleteServer(id string) error {
 	return nil
 }
 
+// BandwidthOfServer retrieves the bandwidth used by a virtual machine
 func (c *Client) BandwidthOfServer(id string) (bandwidth []map[string]string, err error) {
 	var bandwidthMap map[string][][]string
 	if err := c.get(`server/bandwidth?SUBID=`+id, &bandwidthMap); err != nil {
