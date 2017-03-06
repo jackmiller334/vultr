@@ -30,7 +30,7 @@ func (c *Client) GetPlans() ([]Plan, error) {
 
 func (c *Client) GetVC2Plans() ([]Plan, error) {
 	var planMap map[string]Plan
-	if err := c.get(`plans/list_vc2`, &planMap); err != nil {
+	if err := c.get(`plans/list?type=vc2`, &planMap); err != nil {
 		return nil, err
 	}
 
