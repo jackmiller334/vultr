@@ -1,7 +1,5 @@
 package lib
 
-import "fmt"
-
 // Application on Vultr
 type Application struct {
     ID int `json:"APPID,string"`
