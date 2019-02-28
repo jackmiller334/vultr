@@ -5,11 +5,16 @@ import (
 	"runtime"
 
 	vultr "github.com/JamesClonk/vultr/lib"
-	"github.com/jawher/mow.cli"
+	cli "github.com/jawher/mow.cli"
 )
 
 // RegisterCommands registers all CLI commands
 func (c *CLI) RegisterCommands() {
+	// backup
+	c.Command("backup", "see most recent backups", func(cmd *cli.Cmd) {
+		cmd.Command("list", "lists backups", backupsList)
+	})
+
 	// dns
 	c.Command("dns", "modify DNS", func(cmd *cli.Cmd) {
 		cmd.Command("domain", "show and change DNS domains", func(cmd *cli.Cmd) {
@@ -25,6 +30,21 @@ func (c *CLI) RegisterCommands() {
 		})
 	})
 
+	// firewall
+	c.Command("firewall", "modify firewall groups and rules", func(cmd *cli.Cmd) {
+		cmd.Command("group", "show and change firewall groups", func(cmd *cli.Cmd) {
+			cmd.Command("create", "create a firewall group", firewallGroupCreate)
+			cmd.Command("delete", "delete a firewall group", firewallGroupDelete)
+			cmd.Command("set-description", "set firewall group description", firewallGroupSetDescription)
+			cmd.Command("list", "list all firewall groups", firewallGroupList)
+		})
+		cmd.Command("rule", "show and change firewall rules", func(cmd *cli.Cmd) {
+			cmd.Command("create", "create a firewall rule", firewallRuleCreate)
+			cmd.Command("delete", "delete a firewall rule", firewallRuleDelete)
+			cmd.Command("list", "list all firewall rules in a group", firewallRuleList)
+		})
+	})
+
 	// info
 	c.Command("info", "display account information", accountInfo)
 
@@ -33,6 +53,9 @@ func (c *CLI) RegisterCommands() {
 
 	// os
 	c.Command("os", "list all available operating systems", osList)
+
+	// applications
+	c.Command("apps", "list all available applications", appList)
 
 	// plans
 	c.Command("plans", "list all active plans", planList)
@@ -54,8 +77,13 @@ func (c *CLI) RegisterCommands() {
 
 	// servers
 	c.Command("server", "modify virtual machines", func(cmd *cli.Cmd) {
+		cmd.Command("backup", "get and set backup schedules", func(cmd *cli.Cmd) {
+			cmd.Command("get", "get a backup schedule", serversBackupGetSchedule)
+			cmd.Command("set", "set a backup schedule", serversBackupSetSchedule)
+		})
 		cmd.Command("create", "create a new virtual machine", serversCreate)
 		cmd.Command("rename", "rename a virtual machine", serversRename)
+		cmd.Command("tag", "tag a virtual machine", serversTag)
 		cmd.Command("start", "start a virtual machine (restart if already running)", serversStart)
 		cmd.Command("halt", "halt a virtual machine (hard power off)", serversHalt)
 		cmd.Command("reboot", "reboot a virtual machine (hard reboot)", serversReboot)
@@ -64,10 +92,19 @@ func (c *CLI) RegisterCommands() {
 			cmd.Command("change", "change operating system of virtual machine (all data will be lost)", serversChangeOS)
 			cmd.Command("list", "show a list of operating systems to which can be changed to", serversListOS)
 		})
+		cmd.Command("app", "show and change application on a virtual machine", func(cmd *cli.Cmd) {
+			cmd.Command("change", "change application of virtual machine (all data will be lost)", serversChangeApplication)
+			cmd.Command("list", "show a list of available applications to which can be changed to", serversListApplications)
+			cmd.Command("info", "retrieves application information of virtual machine", serversAppInfo)
+		})
 		cmd.Command("iso", "attach/detach ISO of a virtual machine", func(cmd *cli.Cmd) {
 			cmd.Command("attach", "attach ISO to a virtual machine (server will hard reboot)", serversAttachISO)
 			cmd.Command("detach", "detach ISO from a virtual machine (server will hard reboot)", serversDetachISO)
 			cmd.Command("status", "show status of ISO attached to a virtual machine", serversStatusISO)
+		})
+		cmd.Command("restore", "restore from backup/snapshot", func(cmd *cli.Cmd) {
+			cmd.Command("backup", "restore from backup (any data already on the server will be lost)", serversRestoreBackup)
+			cmd.Command("snapshot", "restore from snapshot (any data already on the server will be lost)", serversRestoreSnapshot)
 		})
 		cmd.Command("delete", "delete a virtual machine", serversDelete)
 		cmd.Command("bandwidth", "list bandwidth used by a virtual machine", serversBandwidth)
@@ -75,6 +112,8 @@ func (c *CLI) RegisterCommands() {
 		cmd.Command("show", "show detailed information of a virtual machine", serversShow)
 		// ip information
 		cmd.Command("list-ipv4", "list IPv4 information of a virtual machine", ipv4List)
+		cmd.Command("create-ipv4", "add a new IPv4 address to a virtual machine", ipv4Create)
+		cmd.Command("delete-ipv4", "remove IPv4 address from a virtual machine", ipv4Delete)
 		cmd.Command("list-ipv6", "list IPv6 information of a virtual machine", ipv6List)
 		// reverse dns
 		cmd.Command("reverse-dns", "modify reverse DNS entries", func(cmd *cli.Cmd) {
@@ -84,6 +123,9 @@ func (c *CLI) RegisterCommands() {
 			cmd.Command("delete-ipv6", "delete IPv6 reverse DNS entry", reverseIpv6Delete)
 			cmd.Command("list-ipv6", "list IPv6 reverse DNS entries of a virtual machine", reverseIpv6List)
 		})
+		// firewall groups
+		cmd.Command("set-firewall-group", "set firewall group of a virtual machine", serversSetFirewallGroup)
+		cmd.Command("unset-firewall-group", "remove virtual machine from firewall group", serversUnsetFirewallGroup)
 	})
 	c.Command("servers", "list all active or pending virtual machines on current account", serversList)
 

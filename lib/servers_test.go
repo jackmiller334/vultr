@@ -31,19 +31,20 @@ func Test_Servers_GetServers_NoServers(t *testing.T) {
 
 func Test_Servers_GetServers_OK(t *testing.T) {
 	server, client := getTestServerAndClient(http.StatusOK, `{
-"9753721":{"SUBID":"9753721","os":"Ubuntu 14.04 x64","ram":"768 MB","disk":"Virtual 15 GB","main_ip":"123.456.789.0",
-	"vcpu_count":"2","location":"Frankfurt","DCID":"9","default_password":"oops!","date_created":"2017-07-07 07:07:07",
-	"pending_charges":0.04,"status":"active","cost_per_month":"5.00","current_bandwidth_gb":7,"allowed_bandwidth_gb":"1000",
-	"netmask_v4":"255.255.255.0","gateway_v4":"123.456.789.1","power_status":"running","VPSPLANID":"29",
-	"label":"test alpha","internal_ip":"",
-	"kvm_url":"https:\/\/my.vultr.com\/subs\/vps\/novnc\/api.php?data=123","auto_backups":"no"},
 "789032":{"SUBID":"789032","os":"CentOs 6.5 i368","ram":"1024 MB","disk":"Virtual 20 GB","main_ip":"192.168.1.2",
 	"vcpu_count":"1","location":"Amsterdam","DCID":"21","default_password":"more oops!","date_created":"2011-01-01 01:01:01",
 	"pending_charges":0.01,"status":"stopped","cost_per_month":"7.25","current_bandwidth_gb":0,"allowed_bandwidth_gb":"25",
 	"netmask_v4":"255.255.254.0","gateway_v4":"192.168.1.1","power_status":"down","VPSPLANID":"31",
 	"v6_networks": [{"v6_network": "2002:DB9:1000::", "v6_main_ip": "2000:DB8:1000::0000", "v6_network_size": "32" }],
-	"label":"test 002","internal_ip":"10.10.10.10",
-	"kvm_url":"https:\/\/my.vultr.com\/subs\/vps\/novnc\/api.php?data=456","auto_backups":"yes"}}`)
+	"label":"test beta","internal_ip":"10.10.10.10",
+	"kvm_url":"https:\/\/my.vultr.com\/subs\/vps\/novnc\/api.php?data=456","auto_backups":"yes", "OSID": "127", "APPID": "2",
+	"FIREWALLGROUPID": "1a"},
+"9753721":{"SUBID":"9753721","os":"Ubuntu 14.04 x64","ram":"768 MB","disk":"Virtual 15 GB","main_ip":"123.456.789.0",
+	"vcpu_count":"2","location":"Frankfurt","DCID":"9","default_password":"oops!","date_created":"2017-07-07 07:07:07",
+	"pending_charges":0.04,"status":"active","cost_per_month":"5.00","current_bandwidth_gb":7,"allowed_bandwidth_gb":"1000",
+	"netmask_v4":"255.255.255.0","gateway_v4":"123.456.789.1","power_status":"running","VPSPLANID":"29",
+	"label":"test alpha","internal_ip":"",
+	"kvm_url":"https:\/\/my.vultr.com\/subs\/vps\/novnc\/api.php?data=123","auto_backups":"no", "APPID": "0"}}`)
 	defer server.Close()
 
 	servers, err := client.GetServers()
@@ -52,43 +53,44 @@ func Test_Servers_GetServers_OK(t *testing.T) {
 	}
 	if assert.NotNil(t, servers) {
 		assert.Equal(t, 2, len(servers))
-		// servers could be in random order
-		for _, server := range servers {
-			switch server.ID {
-			case "9753721":
-				assert.Equal(t, "test alpha", server.Name)
-				assert.Equal(t, "Ubuntu 14.04 x64", server.OS)
-				assert.Equal(t, "768 MB", server.RAM)
-				assert.Equal(t, "Virtual 15 GB", server.Disk)
-				assert.Equal(t, "123.456.789.0", server.MainIP)
-				assert.Equal(t, 2, server.VCpus)
-				assert.Equal(t, "Frankfurt", server.Location)
-				assert.Equal(t, 9, server.RegionID)
-				assert.Equal(t, "oops!", server.DefaultPassword)
-				assert.Equal(t, "2017-07-07 07:07:07", server.Created)
-				assert.Equal(t, "255.255.255.0", server.NetmaskV4)
-				assert.Equal(t, "123.456.789.1", server.GatewayV4)
-				assert.Equal(t, 0, len(server.V6Networks))
-				assert.Equal(t, 7.0, server.CurrentBandwidth)
-				assert.Equal(t, 1000.0, server.AllowedBandwidth)
-			case "789032":
-				assert.Equal(t, "test 002", server.Name)
-				assert.Equal(t, 0.01, server.PendingCharges)
-				assert.Equal(t, "7.25", server.Cost)
-				assert.Equal(t, "stopped", server.Status)
-				assert.Equal(t, "down", server.PowerStatus)
-				assert.Equal(t, 31, server.PlanID)
-				assert.Equal(t, 1, len(server.V6Networks))
-				assert.Equal(t, "2002:DB9:1000::", server.V6Networks[0].Network)
-				assert.Equal(t, "2000:DB8:1000::0000", server.V6Networks[0].MainIP)
-				assert.Equal(t, "32", server.V6Networks[0].NetworkSize)
-				assert.Equal(t, "10.10.10.10", server.InternalIP)
-				assert.Equal(t, `https://my.vultr.com/subs/vps/novnc/api.php?data=456`, server.KVMUrl)
-				assert.Equal(t, "yes", server.AutoBackups)
-			default:
-				t.Error("Unknown SUBID")
-			}
-		}
+
+		assert.Equal(t, "9753721", servers[0].ID)
+		assert.Equal(t, "test alpha", servers[0].Name)
+		assert.Equal(t, "Ubuntu 14.04 x64", servers[0].OS)
+		assert.Equal(t, "768 MB", servers[0].RAM)
+		assert.Equal(t, "Virtual 15 GB", servers[0].Disk)
+		assert.Equal(t, "123.456.789.0", servers[0].MainIP)
+		assert.Equal(t, 2, servers[0].VCpus)
+		assert.Equal(t, "Frankfurt", servers[0].Location)
+		assert.Equal(t, 9, servers[0].RegionID)
+		assert.Equal(t, "oops!", servers[0].DefaultPassword)
+		assert.Equal(t, "2017-07-07 07:07:07", servers[0].Created)
+		assert.Equal(t, "255.255.255.0", servers[0].NetmaskV4)
+		assert.Equal(t, "123.456.789.1", servers[0].GatewayV4)
+		assert.Equal(t, 0, len(servers[0].V6Networks))
+		assert.Equal(t, 7.0, servers[0].CurrentBandwidth)
+		assert.Equal(t, 1000.0, servers[0].AllowedBandwidth)
+		assert.Equal(t, "", servers[0].OSID)
+		assert.Equal(t, "", servers[0].AppID)
+		assert.Equal(t, "", servers[0].FirewallGroupID)
+
+		assert.Equal(t, "789032", servers[1].ID)
+		assert.Equal(t, "test beta", servers[1].Name)
+		assert.Equal(t, 0.01, servers[1].PendingCharges)
+		assert.Equal(t, "7.25", servers[1].Cost)
+		assert.Equal(t, "stopped", servers[1].Status)
+		assert.Equal(t, "down", servers[1].PowerStatus)
+		assert.Equal(t, 31, servers[1].PlanID)
+		assert.Equal(t, 1, len(servers[1].V6Networks))
+		assert.Equal(t, "2002:DB9:1000::", servers[1].V6Networks[0].Network)
+		assert.Equal(t, "2000:DB8:1000::0000", servers[1].V6Networks[0].MainIP)
+		assert.Equal(t, "32", servers[1].V6Networks[0].NetworkSize)
+		assert.Equal(t, "10.10.10.10", servers[1].InternalIP)
+		assert.Equal(t, `https://my.vultr.com/subs/vps/novnc/api.php?data=456`, servers[1].KVMUrl)
+		assert.Equal(t, "yes", servers[1].AutoBackups)
+		assert.Equal(t, "127", servers[1].OSID)
+		assert.Equal(t, "2", servers[1].AppID)
+		assert.Equal(t, "1a", servers[1].FirewallGroupID)
 	}
 }
 
@@ -294,6 +296,23 @@ func Test_Servers_RenameServer_OK(t *testing.T) {
 	assert.Nil(t, client.RenameServer("123456789", "new-name"))
 }
 
+func Test_Servers_TagServer_Error(t *testing.T) {
+	server, client := getTestServerAndClient(http.StatusNotAcceptable, `{error}`)
+	defer server.Close()
+
+	err := client.TagServer("123456789", "new-tag")
+	if assert.NotNil(t, err) {
+		assert.Equal(t, `{error}`, err.Error())
+	}
+}
+
+func Test_Servers_TagServer_OK(t *testing.T) {
+	server, client := getTestServerAndClient(http.StatusOK, `{no-response?!}`)
+	defer server.Close()
+
+	assert.Nil(t, client.TagServer("123456789", "new-tag"))
+}
+
 func Test_Servers_StartServer_Error(t *testing.T) {
 	server, client := getTestServerAndClient(http.StatusNotAcceptable, `{error}`)
 	defer server.Close()
@@ -379,6 +398,40 @@ func Test_Servers_DeleteServer_OK(t *testing.T) {
 	assert.Nil(t, client.DeleteServer("123456789"))
 }
 
+func Test_Servers_SetFirewallGroup_Error(t *testing.T) {
+	server, client := getTestServerAndClient(http.StatusNotAcceptable, `{error}`)
+	defer server.Close()
+
+	err := client.SetFirewallGroup("123456789", "123456789")
+	if assert.NotNil(t, err) {
+		assert.Equal(t, `{error}`, err.Error())
+	}
+}
+
+func Test_Servers_SetFirewallGroup_OK(t *testing.T) {
+	server, client := getTestServerAndClient(http.StatusOK, `{no-response?!}`)
+	defer server.Close()
+
+	assert.Nil(t, client.SetFirewallGroup("123456789", "123456789"))
+}
+
+func Test_Servers_UnsetFirewallGroup_Error(t *testing.T) {
+	server, client := getTestServerAndClient(http.StatusNotAcceptable, `{error}`)
+	defer server.Close()
+
+	err := client.UnsetFirewallGroup("123456789")
+	if assert.NotNil(t, err) {
+		assert.Equal(t, `{error}`, err.Error())
+	}
+}
+
+func Test_Servers_UnsetFirewallGroup_OK(t *testing.T) {
+	server, client := getTestServerAndClient(http.StatusOK, `{no-response?!}`)
+	defer server.Close()
+
+	assert.Nil(t, client.UnsetFirewallGroup("123456789"))
+}
+
 func Test_Servers_ChangeOSofServer_Error(t *testing.T) {
 	server, client := getTestServerAndClient(http.StatusNotAcceptable, `{error}`)
 	defer server.Close()
@@ -420,8 +473,8 @@ func Test_Servers_ListOSforServer_NoOS(t *testing.T) {
 
 func Test_Servers_ListOSforServer_OK(t *testing.T) {
 	server, client := getTestServerAndClient(http.StatusOK, `{
-"127":{"OSID":127,"name":"CentOS 6 x64","arch":"x64","family":"centos","windows":false,"surcharge":"0.00"},
 "179":{"OSID":179,"name":"CoreOS Stable","arch":"x64","family":"coreos","windows":false,"surcharge":"1.25"},
+"127":{"OSID":127,"name":"CentOS 6 x64","arch":"x64","family":"centos","windows":false,"surcharge":"0.00"},
 "124":{"OSID":124,"name":"Windows 2012 R2 x64","arch":"x64","family":"windows","windows":true,"surcharge":"5.99"}}`)
 	defer server.Close()
 
@@ -431,28 +484,24 @@ func Test_Servers_ListOSforServer_OK(t *testing.T) {
 	}
 	if assert.NotNil(t, os) {
 		assert.Equal(t, 3, len(os))
-		// OS could be in random order
-		for _, os := range os {
-			switch os.ID {
-			case 127:
-				assert.Equal(t, "CentOS 6 x64", os.Name)
-				assert.Equal(t, "x64", os.Arch)
-				assert.Equal(t, "centos", os.Family)
-				assert.Equal(t, "0.00", os.Surcharge)
-			case 179:
-				assert.Equal(t, "coreos", os.Family)
-				assert.Equal(t, "CoreOS Stable", os.Name)
-				assert.Equal(t, false, os.Windows)
-				assert.Equal(t, "1.25", os.Surcharge)
-			case 124:
-				assert.Equal(t, "windows", os.Family)
-				assert.Equal(t, "Windows 2012 R2 x64", os.Name)
-				assert.Equal(t, true, os.Windows)
-				assert.Equal(t, "5.99", os.Surcharge)
-			default:
-				t.Error("Unknown OSID")
-			}
-		}
+
+		assert.Equal(t, 127, os[0].ID)
+		assert.Equal(t, "CentOS 6 x64", os[0].Name)
+		assert.Equal(t, "x64", os[0].Arch)
+		assert.Equal(t, "centos", os[0].Family)
+		assert.Equal(t, "0.00", os[0].Surcharge)
+
+		assert.Equal(t, 179, os[1].ID)
+		assert.Equal(t, "coreos", os[1].Family)
+		assert.Equal(t, "CoreOS Stable", os[1].Name)
+		assert.Equal(t, false, os[1].Windows)
+		assert.Equal(t, "1.25", os[1].Surcharge)
+
+		assert.Equal(t, 124, os[2].ID)
+		assert.Equal(t, "windows", os[2].Family)
+		assert.Equal(t, "Windows 2012 R2 x64", os[2].Name)
+		assert.Equal(t, true, os[2].Windows)
+		assert.Equal(t, "5.99", os[2].Surcharge)
 	}
 }
 
@@ -502,5 +551,206 @@ func Test_Servers_BandwidthOfServer_OK(t *testing.T) {
 		assert.Equal(t, "2014-06-12", bandwidth[2]["date"])
 		assert.Equal(t, "216885232", bandwidth[2]["incoming"])
 		assert.Equal(t, "2455005", bandwidth[2]["outgoing"])
+	}
+}
+
+func Test_Servers_ChangeApplicationofServer_Error(t *testing.T) {
+	server, client := getTestServerAndClient(http.StatusNotAcceptable, `{error}`)
+	defer server.Close()
+
+	err := client.ChangeApplicationofServer("123456789", "3")
+	if assert.NotNil(t, err) {
+		assert.Equal(t, `{error}`, err.Error())
+	}
+}
+
+func Test_Servers_ChangeApplicationofServer_OK(t *testing.T) {
+	server, client := getTestServerAndClient(http.StatusOK, `{no-response?!}`)
+	defer server.Close()
+
+	assert.Nil(t, client.ChangeApplicationofServer("123456789", "3"))
+}
+
+func Test_Servers_ListApplicationsforServer_Error(t *testing.T) {
+	server, client := getTestServerAndClient(http.StatusNotAcceptable, `{error}`)
+	defer server.Close()
+
+	apps, err := client.ListApplicationsforServer("123456789")
+	assert.Nil(t, apps)
+	if assert.NotNil(t, err) {
+		assert.Equal(t, `{error}`, err.Error())
+	}
+}
+
+func Test_Servers_ListApplicationsforServer_NoOS(t *testing.T) {
+	server, client := getTestServerAndClient(http.StatusOK, `[]`)
+	defer server.Close()
+
+	apps, err := client.ListApplicationsforServer("123456789")
+	if err != nil {
+		t.Error(err)
+	}
+	assert.Nil(t, apps)
+}
+
+func Test_Servers_ListApplicationsforServer_OK(t *testing.T) {
+	server, client := getTestServerAndClient(http.StatusOK, `{
+"2": {"APPID": "2","name": "WordPress","short_name": "wordpress","deploy_name": "WordPress on CentOS 6 x64","surcharge": 0},
+"1": {"APPID": "1","name": "LEMP","short_name": "lemp","deploy_name": "LEMP on CentOS 6 x64","surcharge": 5}
+}`)
+	defer server.Close()
+
+	apps, err := client.ListApplicationsforServer("123456789")
+	if err != nil {
+		t.Error(err)
+	}
+	if assert.NotNil(t, apps) {
+		assert.Equal(t, 2, len(apps))
+
+		assert.Equal(t, "1", apps[0].ID)
+		assert.Equal(t, "LEMP", apps[0].Name)
+		assert.Equal(t, "lemp", apps[0].ShortName)
+		assert.Equal(t, "LEMP on CentOS 6 x64", apps[0].DeployName)
+		assert.Equal(t, float64(5), apps[0].Surcharge)
+
+		assert.Equal(t, "2", apps[1].ID)
+		assert.Equal(t, "WordPress", apps[1].Name)
+		assert.Equal(t, "wordpress", apps[1].ShortName)
+		assert.Equal(t, "WordPress on CentOS 6 x64", apps[1].DeployName)
+	}
+}
+
+func Test_Servers_ListPrivateNetworksForServer_Error(t *testing.T) {
+	server, client := getTestServerAndClient(http.StatusNotAcceptable, `{error}`)
+	defer server.Close()
+
+	nets, err := client.ListPrivateNetworksForServer("123456789")
+	assert.Nil(t, nets)
+	if assert.NotNil(t, err) {
+		assert.Equal(t, `{error}`, err.Error())
+	}
+}
+
+func Test_Servers_ListPrivateNetworksForServer_NoOS(t *testing.T) {
+	server, client := getTestServerAndClient(http.StatusOK, `[]`)
+	defer server.Close()
+
+	nets, err := client.ListPrivateNetworksForServer("123456789")
+	if err != nil {
+		t.Error(err)
+	}
+	assert.Nil(t, nets)
+}
+
+func Test_Servers_ListPrivateNetworksForServer_OK(t *testing.T) {
+	server, client := getTestServerAndClient(http.StatusOK, `{
+"net53962b0f2341f": {"NETWORKID": "net53962b0f2341f","mac_address": "5a01.0000.24e9","ip_address": "0.0.0.0"},
+"net539626f0798d7": {"NETWORKID": "net539626f0798d7","mac_address": "5a02.0000.24e9","ip_address": "10.99.0.3"}
+}`)
+	defer server.Close()
+
+	nets, err := client.ListPrivateNetworksForServer("123456789")
+	if err != nil {
+		t.Error(err)
+	}
+	if assert.NotNil(t, nets) {
+		assert.Equal(t, 2, len(nets))
+
+		assert.Equal(t, "net53962b0f2341f", nets[0].ID)
+		assert.Equal(t, "5a01.0000.24e9", nets[0].MACAddress)
+		assert.Equal(t, "0.0.0.0", nets[0].IPAddress)
+
+		assert.Equal(t, "net539626f0798d7", nets[1].ID)
+		assert.Equal(t, "5a02.0000.24e9", nets[1].MACAddress)
+		assert.Equal(t, "10.99.0.3", nets[1].IPAddress)
+	}
+}
+
+func Test_Servers_DisablePrivateNetworkForServer_Error(t *testing.T) {
+	server, client := getTestServerAndClient(http.StatusNotAcceptable, `{error}`)
+	defer server.Close()
+
+	err := client.DisablePrivateNetworkForServer("123456789", "foo")
+	if assert.NotNil(t, err) {
+		assert.Equal(t, `{error}`, err.Error())
+	}
+}
+
+func Test_Servers_DisablePrivateNetworkForServer_OK(t *testing.T) {
+	server, client := getTestServerAndClient(http.StatusOK, `{no-response?!}`)
+	defer server.Close()
+
+	assert.Nil(t, client.DisablePrivateNetworkForServer("123456789", "foo"))
+}
+
+func Test_Servers_EnablePrivateNetworkForServer_Error(t *testing.T) {
+	server, client := getTestServerAndClient(http.StatusNotAcceptable, `{error}`)
+	defer server.Close()
+
+	err := client.EnablePrivateNetworkForServer("123456789", "foo")
+	if assert.NotNil(t, err) {
+		assert.Equal(t, `{error}`, err.Error())
+	}
+}
+
+func Test_Servers_EnablePrivateNetworkForServer_OK(t *testing.T) {
+	server, client := getTestServerAndClient(http.StatusOK, `{no-response?!}`)
+	defer server.Close()
+
+	assert.Nil(t, client.EnablePrivateNetworkForServer("123456789", "foo"))
+}
+
+func Test_Servers_BackupGetSchedule_OK(t *testing.T) {
+	server, client := getTestServerAndClient(http.StatusOK, `{
+    "enabled": true,
+    "cron_type": "weekly",
+    "next_scheduled_time_utc": "2016-05-07 08:00:00",
+    "hour": 8,
+    "dow": 6,
+    "dom": 0
+}`)
+	defer server.Close()
+
+	backupSchedule, err := client.BackupGetSchedule("123456789")
+	if err != nil {
+		t.Error(err)
+	}
+	if assert.NotNil(t, backupSchedule) {
+		assert.Equal(t, true, backupSchedule.Enabled)
+		assert.Equal(t, "weekly", backupSchedule.CronType)
+		assert.Equal(t, "2016-05-07 08:00:00", backupSchedule.NextScheduledTimeUtc)
+		assert.Equal(t, 8, backupSchedule.Hour)
+		assert.Equal(t, 6, backupSchedule.Dow)
+		assert.Equal(t, 0, backupSchedule.Dom)
+
+	}
+
+}
+
+func Test_Servers_BackupSetSchedule_OK(t *testing.T) {
+	server, client := getTestServerAndClient(http.StatusOK, `{no-response?!}`)
+	defer server.Close()
+
+	assert.Nil(t, client.BackupSetSchedule("123456789", BackupSchedule{}))
+}
+
+func Test_Servers_BackupGetSchedule_Error(t *testing.T) {
+	server, client := getTestServerAndClient(http.StatusNotAcceptable, `{error}`)
+	defer server.Close()
+
+	backupSchedule, err := client.BackupGetSchedule("123456789")
+	assert.Nil(t, backupSchedule)
+	if assert.NotNil(t, err) {
+		assert.Equal(t, `{error}`, err.Error())
+	}
+}
+
+func Test_Servers_BackupSetSchedule_Error(t *testing.T) {
+	server, client := getTestServerAndClient(http.StatusNotAcceptable, `{error}`)
+	defer server.Close()
+
+	err := client.BackupSetSchedule("123456789", BackupSchedule{})
+	if assert.NotNil(t, err) {
+		assert.Equal(t, `{error}`, err.Error())
 	}
 }

@@ -5,9 +5,10 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 
 	vultr "github.com/JamesClonk/vultr/lib"
-	"github.com/jawher/mow.cli"
+	cli "github.com/jawher/mow.cli"
 )
 
 func serversCreate(cmd *cli.Cmd) {
@@ -27,6 +28,8 @@ func serversCreate(cmd *cli.Cmd) {
 	sshkey := cmd.StringOpt("k sshkey", "", "SSHKEYID (see <sshkeys>) of SSH key to apply to this server on install")
 	hostname := cmd.StringOpt("hostname", "", "Hostname to assign to this server")
 	tag := cmd.StringOpt("tag", "", "Tag to assign to this server")
+	appID := cmd.StringOpt("a app", "", "If launching an application (OSID 186), this is the APPID to launch")
+	reservedIP := cmd.StringOpt("ip", "", "IP address of the floating IP to use as the main IP of this server")
 	ipv6 := cmd.BoolOpt("ipv6", false, "Assign an IPv6 subnet to this virtual machine (where available)")
 	privateNetworking := cmd.BoolOpt("private-networking", false, "Add private networking support for this virtual machine")
 	autoBackups := cmd.BoolOpt("autobackups", false, "Enable automatic backups for this virtual machine")
@@ -39,11 +42,13 @@ func serversCreate(cmd *cli.Cmd) {
 			Script:               *script,
 			Snapshot:             *snapshot,
 			SSHKey:               *sshkey,
+			ReservedIP:           *reservedIP,
 			IPV6:                 *ipv6,
 			PrivateNetworking:    *privateNetworking,
 			AutoBackups:          *autoBackups,
 			Hostname:             *hostname,
 			Tag:                  *tag,
+			AppID:                *appID,
 			DontNotifyOnActivate: !*notifyActivate,
 		}
 		if *userDataFile != "" {
@@ -67,15 +72,91 @@ func serversCreate(cmd *cli.Cmd) {
 	}
 }
 
+func serversBackupGetSchedule(cmd *cli.Cmd) {
+	cmd.Spec = "SUBID"
+	id := cmd.StringArg("SUBID", "", "SUBID of virtual machine (see <servers>)")
+
+	server, err := GetClient().BackupGetSchedule(*id)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	lengths := []int{4, 14, 32, 2, 1, 1}
+	tabsPrint(columns{"Enabled", "CronType", "NextScheduledTimeUtc", "Hour", "Dow", "Dom"}, lengths)
+	tabsPrint(columns{server.Enabled, server.CronType, server.NextScheduledTimeUtc, server.Hour, server.Dow, server.Dom}, lengths)
+	tabsFlush()
+
+}
+func serversBackupSetSchedule(cmd *cli.Cmd) {
+	cmd.Spec = "SUBID -C [-H -w -m]"
+
+	id := cmd.StringArg("SUBID", "", "SUBID of virtual machine (see <servers>)")
+	cronType := cmd.StringArg("C cronType", "", "Backup cron type. Can be one of (daily, weekly, monthly, daily_alt_even, daily_alt_odd)")
+	hour := cmd.IntOpt("H hour", 0, "(optional) Hour value (0-23). Applicable to crons: daily, weekly, monthly, daily_alt_even, daily_alt_odd")
+	dayOfWeek := cmd.IntOpt("w dow", 0, "(optional) Day-of-week value (0-6). Applicable to crons: weekly")
+	dayOfMonth := cmd.IntOpt("m dom", 0, "(optional) Day-of-month value (1-28). Applicable to crons: monthly")
+	bs := vultr.BackupSchedule{
+		CronType: *cronType,
+		Hour:     *hour,
+		Dow:      *dayOfWeek,
+		Dom:      *dayOfMonth,
+	}
+	err := GetClient().BackupSetSchedule(*id, bs)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("Backup schedule set\n\n")
+}
+
 func serversRename(cmd *cli.Cmd) {
 	cmd.Spec = "SUBID -n"
 	id := cmd.StringArg("SUBID", "", "SUBID of virtual machine (see <servers>)")
 	name := cmd.StringOpt("n name", "", "new name of virtual machine")
+
 	cmd.Action = func() {
 		if err := GetClient().RenameServer(*id, *name); err != nil {
 			log.Fatal(err)
 		}
 		fmt.Printf("Virtual machine renamed to: %v\n", *name)
+	}
+}
+
+func serversTag(cmd *cli.Cmd) {
+	cmd.Spec = "SUBID -t"
+	id := cmd.StringArg("SUBID", "", "SUBID of virtual machine (see <servers>)")
+	tag := cmd.StringOpt("t tag", "", "new tag for virtual machine")
+
+	cmd.Action = func() {
+		if err := GetClient().TagServer(*id, *tag); err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("Virtual machine tagged with: %v\n", *tag)
+	}
+}
+
+func serversSetFirewallGroup(cmd *cli.Cmd) {
+	cmd.Spec = "SUBID GROUP_ID"
+	id := cmd.StringArg("SUBID", "", "SUBID of virtual machine (see <servers>)")
+	gid := cmd.StringArg("GROUP_ID", "", "Firewall group ID (see <firewall group list>)")
+
+	cmd.Action = func() {
+		if err := GetClient().SetFirewallGroup(*id, *gid); err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("Virtual machine added to firewall group: %v\n", *gid)
+	}
+}
+
+func serversUnsetFirewallGroup(cmd *cli.Cmd) {
+	cmd.Spec = "SUBID"
+	id := cmd.StringArg("SUBID", "", "SUBID of virtual machine (see <servers>)")
+
+	cmd.Action = func() {
+		if err := GetClient().UnsetFirewallGroup(*id); err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println("Virtual machine removed from firewall group")
 	}
 }
 
@@ -123,6 +204,7 @@ func serversChangeOS(cmd *cli.Cmd) {
 	cmd.Spec = "SUBID -o"
 	id := cmd.StringArg("SUBID", "", "SUBID of virtual machine (see <servers>)")
 	osID := cmd.IntOpt("o os", 0, "Operating system (OSID)")
+
 	cmd.Action = func() {
 		if err := GetClient().ChangeOSofServer(*id, *osID); err != nil {
 			log.Fatal(err)
@@ -135,6 +217,7 @@ func serversAttachISO(cmd *cli.Cmd) {
 	cmd.Spec = "SUBID -i"
 	id := cmd.StringArg("SUBID", "", "SUBID of virtual machine (see <servers>)")
 	isoID := cmd.IntOpt("i iso", 0, "ISOID of ISO image")
+
 	cmd.Action = func() {
 		if err := GetClient().AttachISOtoServer(*id, *isoID); err != nil {
 			log.Fatal(err)
@@ -173,6 +256,32 @@ func serversStatusISO(cmd *cli.Cmd) {
 	}
 }
 
+func serversRestoreBackup(cmd *cli.Cmd) {
+	cmd.Spec = "SUBID -b"
+	id := cmd.StringArg("SUBID", "", "SUBID of virtual machine (see <servers>)")
+	backupID := cmd.StringOpt("b backup", "", "BACKUPID of backups")
+
+	cmd.Action = func() {
+		if err := GetClient().RestoreBackup(*id, *backupID); err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("Virtual machine restored, server will be reboot: %v\n", *id)
+	}
+}
+
+func serversRestoreSnapshot(cmd *cli.Cmd) {
+	cmd.Spec = "SUBID -s"
+	id := cmd.StringArg("SUBID", "", "SUBID of virtual machine (see <servers>)")
+	snapshotID := cmd.StringOpt("s snapshot", "", "SNAPSHOTID of snapshots")
+
+	cmd.Action = func() {
+		if err := GetClient().RestoreSnapshot(*id, *snapshotID); err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("Virtual machine restored, server will be reboot: %v\n", *id)
+	}
+}
+
 func serversListOS(cmd *cli.Cmd) {
 	id := cmd.StringArg("SUBID", "", "SUBID of virtual machine (see <servers>)")
 	cmd.Action = func() {
@@ -197,23 +306,23 @@ func serversListOS(cmd *cli.Cmd) {
 
 func serversDelete(cmd *cli.Cmd) {
 	cmd.Spec = "SUBID [-f]"
-
 	id := cmd.StringArg("SUBID", "", "SUBID of virtual machine (see <servers>)")
 	confirm := cmd.BoolOpt("f force", false, "Confirm deleting a server")
-	var input string
+
 	cmd.Action = func() {
 		if *confirm != true {
-			fmt.Print("Are you sure? (Type uppercase yes): ")
+			var input string
+			fmt.Print("Are you sure? (type 'yes'): ")
 			fmt.Scanln(&input)
-			if input != "YES" {
+			if strings.ToLower(input) != "yes" {
 				os.Exit(1)
 			}
 		}
+
 		if err := GetClient().DeleteServer(*id); err != nil {
 			log.Fatal(err)
 		}
 		fmt.Println("Virtual machine deleted")
-
 	}
 }
 
@@ -251,7 +360,7 @@ func serversList(cmd *cli.Cmd) {
 			return
 		}
 
-		lengths := []int{12, 16, 24, 32, 32, 32, 8, 8, 24, 12, 8}
+		lengths := []int{12, 16, 24, 32, 32, 32, 8, 8, 24, 16, 8}
 		tabsPrint(columns{
 			"SUBID",
 			"STATUS",
@@ -275,7 +384,7 @@ func serversList(cmd *cli.Cmd) {
 				server.VCpus,
 				server.RAM,
 				server.Disk,
-				server.AllowedBandwidth,
+				fmt.Sprintf("%v/%v", server.CurrentBandwidth, server.AllowedBandwidth),
 				server.Cost,
 			}, lengths)
 		}
@@ -285,7 +394,6 @@ func serversList(cmd *cli.Cmd) {
 
 func serversShow(cmd *cli.Cmd) {
 	cmd.Spec = "SUBID [-f]"
-
 	id := cmd.StringArg("SUBID", "", "SUBID of virtual machine (see <servers>)")
 	full := cmd.BoolOpt("f full", false, "Display full length of KVM URL")
 
@@ -336,6 +444,9 @@ func serversShow(cmd *cli.Cmd) {
 			tabsPrint(columns{fmt.Sprintf("#%d IPv6 Network:", n+1), v6network.Network}, lengths)
 			tabsPrint(columns{fmt.Sprintf("#%d IPv6 Network Size:", n+1), v6network.NetworkSize}, lengths)
 		}
+		if len(server.FirewallGroupID) != 0 {
+			tabsPrint(columns{"Firewall Group ID:", server.FirewallGroupID}, lengths)
+		}
 		tabsPrint(columns{"Created date:", server.Created}, lengths)
 		tabsPrint(columns{"Default password:", server.DefaultPassword}, lengths)
 		tabsPrint(columns{"Auto backups:", server.AutoBackups}, lengths)
@@ -357,18 +468,45 @@ func ipv4List(cmd *cli.Cmd) {
 			return
 		}
 
-		lengths := []int{24, 24, 24, 32, 48}
-		tabsPrint(columns{"IP", "NETMASK", "GATEWAY", "TYPE", "REVERSE DNS"}, lengths)
+		lengths := []int{24, 24, 24, 24, 32, 48}
+		tabsPrint(columns{"IP", "NETMASK", "GATEWAY", "MAC", "TYPE", "REVERSE DNS"}, lengths)
 		for _, ip := range list {
 			tabsPrint(columns{
 				ip.IP,
 				ip.Netmask,
 				ip.Gateway,
+				ip.MAC,
 				ip.Type,
 				ip.ReverseDNS,
 			}, lengths)
 		}
 		tabsFlush()
+	}
+}
+
+func ipv4Create(cmd *cli.Cmd) {
+	cmd.Spec = "SUBID"
+	id := cmd.StringArg("SUBID", "", "SUBID of virtual machine (see <servers>)")
+	reboot := cmd.BoolOpt("r reboot", false, "reboot virtual machine after attaching IPv4 address")
+
+	cmd.Action = func() {
+		if err := GetClient().CreateIPv4(*id, *reboot); err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println("IPv4 address attached to virtual machine")
+	}
+}
+
+func ipv4Delete(cmd *cli.Cmd) {
+	cmd.Spec = "SUBID IP"
+	id := cmd.StringArg("SUBID", "", "SUBID of virtual machine (see <servers>)")
+	ip := cmd.StringArg("IP", "", "IPv4 of virtual machine (see <list-ipv4>)")
+
+	cmd.Action = func() {
+		if err := GetClient().DeleteIPv4(*id, *ip); err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println("IPv4 address deleted")
 	}
 }
 
@@ -472,5 +610,56 @@ func reverseIpv4Set(cmd *cli.Cmd) {
 			log.Fatal(err)
 		}
 		fmt.Printf("IPv4 reverse DNS set to: %v\n", *entry)
+	}
+}
+
+func serversChangeApplication(cmd *cli.Cmd) {
+	cmd.Spec = "SUBID APPID"
+	id := cmd.StringArg("SUBID", "", "SUBID of virtual machine (see <servers>)")
+	appID := cmd.StringArg("APPID", "", "Application to use (see <apps>)")
+
+	cmd.Action = func() {
+		if err := GetClient().ChangeApplicationofServer(*id, *appID); err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("Virtual machine application changed to: %v\n", *appID)
+	}
+}
+
+func serversListApplications(cmd *cli.Cmd) {
+	id := cmd.StringArg("SUBID", "", "SUBID of virtual machine (see <servers>)")
+	cmd.Action = func() {
+		apps, err := GetClient().ListApplicationsforServer(*id)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if len(apps) == 0 {
+			fmt.Println()
+			return
+		}
+
+		lengths := []int{8, 32, 24, 32, 12}
+		tabsPrint(columns{"APPID", "NAME", "SHORT_NAME", "DEPLOY_NAME", "SURCHARGE"}, lengths)
+		for _, app := range apps {
+			tabsPrint(columns{app.ID, app.Name, app.ShortName, app.DeployName, app.Surcharge}, lengths)
+		}
+		tabsFlush()
+	}
+}
+func serversAppInfo(cmd *cli.Cmd) {
+	id := cmd.StringArg("SUBID", "", "SUBID of virtual machine (see <servers>)")
+	cmd.Action = func() {
+		app, err := GetClient().GetApplicationInfo(*id)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if app.Info == "" {
+			fmt.Printf("Could not retrieve application information of virtual machine with SUBID %v!\n", *id)
+			return
+		}
+
+		fmt.Printf("%s", app.Info)
 	}
 }
