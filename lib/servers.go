@@ -698,3 +698,25 @@ func (c *Client) BackupSetSchedule(id string, bs BackupSchedule) error {
 	}
 	return c.post(`server/backup_set_schedule`, values, nil)
 }
+
+// EnableBackups enables backups for a server
+func (c *Client) EnableBackups(id string) error {
+	values := url.Values{
+		"SUBID": {id},
+	}
+	if err := c.post(`server/backup_enable`, values, nil); err != nil {
+		return err
+	}
+	return nil
+}
+
+// DisableBackups disables backups for a server
+func (c *Client) DisableBackups(id string) error {
+	values := url.Values{
+		"SUBID": {id},
+	}
+	if err := c.post(`server/backup_disable`, values, nil); err != nil {
+		return err
+	}
+	return nil
+}
