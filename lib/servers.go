@@ -47,7 +47,6 @@ type Server struct {
 type ServerOptions struct {
 	IPXEChainURL         string
 	ISO                  int
-	AppID                int
 	Script               int
 	UserData             string
 	Snapshot             string
@@ -278,10 +277,6 @@ func (c *Client) CreateServer(name string, regionID, planID, osID int, options *
 
 		if options.ISO != 0 {
 			values.Add("ISOID", fmt.Sprintf("%v", options.ISO))
-		}
-
-		if options.AppID != 0 {
-			values.Add("APPID", fmt.Sprintf("%v", options.AppID))
 		}
 
 		if options.Script != 0 {

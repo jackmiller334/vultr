@@ -33,6 +33,6 @@ func (c *Client) GetApplications() ([]Application, error) {
 	for _, application := range applicationMap {
 		applicationList = append(applicationList, application)
 	}
-	sort.Sort(applications(appList))
+	sort.Sort(applications(applicationList))
 	return applicationList, nil
 }
