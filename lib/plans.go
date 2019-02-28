@@ -75,11 +75,12 @@ func (c *Client) GetVC2Plans() ([]Plan, error) {
 		return nil, err
 	}
 
-	var planList []Plan
+	var p plans
 	for _, plan := range planMap {
-		planList = append(planList, plan)
+		p = append(p, plan)
 	}
-	return planList, nil
+	sort.Sort(plans(p))
+	return p, nil
 }
 
 // GetAvailablePlansForRegion returns available plans for specified region
